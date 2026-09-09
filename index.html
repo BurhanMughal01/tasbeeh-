@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasbeeh Pro</title>
+    <style>
+        :root {
+            --bg-color: #090d16;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --gold: #fbbf24;
+            --danger: #ef4444;
+        }
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --accent: #059669;
+            --accent-glow: rgba(5, 150, 105, 0.3);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border: rgba(0, 0, 0, 0.08);
+            --gold: #d97706;
+            --danger: #dc2626;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; transition: all 0.2s ease; }
+        body { background-color: var(--bg-color); color: var(--text-primary); min-height: 100vh; display: flex; justify-content: center; background-image: radial-gradient(circle at top, var(--accent-glow) 0%, transparent 40%); }
+        .app-container { width: 100%; max-width: 480px; background: var(--card-bg); backdrop-filter: blur(12px); min-height: 100vh; display: flex; flex-direction: column; border-left: 1px solid var(--border); border-right: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.3); position: relative; }
+        .screen { display: none; flex-direction: column; flex: 1; padding: 16px; padding-bottom: 50px; }
+        .screen.active { display: flex; }
+        .top-bar, .nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        .app-title { font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: 0.5px; }
+        .tools { display: flex; gap: 8px; align-items: center; }
+        select.lang-select { background: var(--card-bg); color: var(--text-primary); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; font-size: 13px; outline: none; cursor: pointer; }
+        .icon-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text-primary); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; }
+        .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .stats-card { background: linear-gradient(135deg, var(--accent), #047857); color: white; padding: 16px; border-radius: 16px; margin-bottom: 14px; text-align: center; box-shadow: 0 8px 20px var(--accent-glow); position: relative; }
+        .stat-num { font-size: 28px; font-weight: 800; display: block; }
+        .btn-reset-lifetime { margin-top: 8px; background: rgba(0, 0, 0, 0.25); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .btn-reset-lifetime:hover { background: var(--danger); border-color: var(--danger); }
+        .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search-box { flex: 1; }
+        .search-box input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); font-size: 14px; outline: none; }
+        .btn-add-dhikr { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+        .dhikr-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; max-height: 48vh; }
+        .dhikr-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .dhikr-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .dhikr-item .info h3 { font-size: 16px; margin-bottom: 4px; color: var(--text-primary); }
+        .dhikr-item .info p { font-size: 12px; color: var(--text-secondary); }
+        .badge { background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+        
+        /* Optimized Card detail with auto-expanding & smooth scrolling */
+        .card-detail { background: var(--card-bg); border-radius: 16px; padding: 16px; border: 1px solid var(--border); margin-bottom: 10px; text-align: center; max-height: 280px; overflow-y: auto; word-wrap: break-word; }
+        .arabic-text { font-size: 20px; line-height: 1.8; color: var(--gold); font-weight: 600; margin-bottom: 12px; direction: rtl; }
+        .trans-block { font-size: 13px; color: var(--text-primary); margin-bottom: 10px; line-height: 1.6; text-align: center; white-space: pre-wrap; }
+        .benefit-block { font-size: 12px; color: var(--accent); line-height: 1.5; text-align: center; font-style: italic; white-space: pre-wrap; font-weight: 600; background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px; }
+        
+        .target-chips { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+        .chip { background: var(--card-bg); border: 1px solid var(--border); color: var(--text-secondary); padding: 5px 12px; font-size: 12px; border-radius: 15px; cursor: pointer; font-weight: 600; }
+        .chip.active, .chip:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .counter-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .ring-container { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
+        .progress-ring { transform: rotate(-90deg); }
+        .progress-ring-circle { transition: stroke-dashoffset 0.25s ease; stroke-dasharray: 440; stroke-dashoffset: 440; }
+        .counter-content { position: absolute; text-align: center; }
+        .count-number { font-size: 42px; font-weight: 800; color: var(--text-primary); }
+        .count-target { font-size: 12px; color: var(--text-secondary); }
+        .action-row { display: flex; gap: 8px; width: 100%; margin-top: 10px; }
+        .btn-sub { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); font-weight: 700; font-size: 13px; cursor: pointer; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; margin-bottom: 4px; color: var(--text-secondary); }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); outline: none; font-size: 13px; }
+        .form-group textarea { height: 65px; resize: none; }
+        .btn-primary { background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700; width: 100%; cursor: pointer; box-shadow: 0 6px 15px var(--accent-glow); margin-top: 5px; }
+        .backup-bar { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-sm { flex: 1; padding: 8px; font-size: 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-secondary); cursor: pointer; text-align: center; }
+        .footer-credit { position: absolute; bottom: 8px; left: 0; width: 100%; text-align: center; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .footer-credit span { color: var(--gold); font-weight: 700; }
+
+        /* Custom Modal Dialog */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-box { background: var(--bg-color); border: 1px solid var(--border); padding: 20px; border-radius: 16px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-box h3 { margin-bottom: 12px; color: var(--text-primary); font-size: 16px; }
+        .modal-box input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); margin-bottom: 15px; font-size: 14px; text-align: center; outline: none; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="top-bar">
+        <span class="app-title" id="appTitle">📿 Tasbeeh Pro</span>
+        <div class="tools">
+            <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+                <option value="en">English</option>
+                <option value="ur">اردو</option>
+                <option value="ar">العربية</option>
+                <option value="tr">Türkçe</option>
+            </select>
+            <button class="icon-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+            <button class="icon-btn" id="themeToggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </div>
+
+    <!-- 1. List Screen -->
+    <div id="list-screen" class="screen active">
+        <div class="stats-card">
+            <div class="stat-box">
+                <span class="stat-num" id="totalCountDisplay">0</span>
+                <span id="labelTotal">Total Lifetime Count</span>
+            </div>
+            <button type="button" class="btn-reset-lifetime" onclick="resetLifetimeCount()">🔄 Reset Lifetime Count</button>
+        </div>
+        
+        <div class="search-row">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search Dhikr..." oninput="filterList()">
+            </div>
+            <button type="button" class="btn-add-dhikr" onclick="openAddDhikrForm()">➕ Add Zikr</button>
+        </div>
+
+        <div class="dhikr-list" id="dhikrListContainer"></div>
+        
+        <div class="backup-bar">
+            <button type="button" class="btn-sm" onclick="exportData()">💾 Backup</button>
+            <button type="button" class="btn-sm" onclick="importData()">📂 Restore</button>
+        </div>
+    </div>
+
+    <!-- 2. Detail Screen -->
+    <div id="detail-screen" class="screen">
+        <div class="nav-bar">
+            <button type="button" class="icon-btn" onclick="showScreen('list-screen')">←</button>
+            <div class="tools">
+                <button class="icon-btn" onclick="changeFontSize(2)">A+</button>
+                <button class="icon-btn" onclick="changeFontSize(-2)">A-</button>
+            </div>
+        </div>
+        <div class="card-detail">
+            <div class="arabic-text" id="detailArabic"></div>
+            <div class="trans-block" id="detailTrans"></div>
+            <div class="benefit-block" id="detailBenefit"></div>
+        </div>
+
+        <div class="target-chips" id="targetChipsBar">
+            <span class="chip" onclick="setQuickTarget(7)">7</span>
+            <span class="chip" onclick="setQuickTarget(10)">10</span>
+            <span class="chip" onclick="setQuickTarget(33)">33</span>
+            <span class="chip" onclick="setQuickTarget(100)">100</span>
+            <span class="chip" onclick="setQuickTarget(500)">500</span>
+            <span class="chip" onclick="setQuickTarget(1000)">1000</span>
+            <span class="chip" onclick="promptCustomTarget()">✏️ Custom</span>
+        </div>
+
+        <div class="counter-section">
+            <div class="ring-container" onclick="handleTap()">
+                <svg class="progress-ring" width="160" height="160">
+                    <circle stroke="rgba(255,255,255,0.1)" stroke-width="10" fill="transparent" r="65" cx="80" cy="80"/>
+                    <circle class="progress-ring-circle" id="progressCircle" stroke="#10b981" stroke-width="10" stroke-linecap="round" fill="transparent" r="65" cx="80" cy="80"/>
+                </svg>
+                <div class="counter-content">
+                    <div class="count-number" id="countDisplay">0</div>
+                    <div class="count-target" id="targetDisplay">Target: 33</div>
+                </div>
+            </div>
+            <div class="action-row">
+                <button type="button" class="btn-sub" id="resetBtnText" onclick="resetCurrentCount()">Reset</button>
+                <button type="button" class="btn-sub" id="editBtnText" onclick="editCurrentDhikr()" style="display:none;">Edit Zikr</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Form Screen for Add/Edit Dhikr -->
+    <div id="add-screen" class="screen">
+        <div class="nav-bar">
+            <button type="button" class="icon-btn" onclick="showScreen('list-screen')">←</button>
+            <h3 id="formHeading">Add New Dhikr</h3>
+        </div>
+        <div class="form-group"><label>Title</label><input type="text" id="customTitle" placeholder="e.g. Darood Sharif"></div>
+        <div class="form-group"><label>Arabic</label><textarea id="customArabic" placeholder="عربی متن درج کریں"></textarea></div>
+        <div class="form-group"><label>Translation</label><textarea id="customTrans" placeholder="ترجمہ درج کریں"></textarea></div>
+        <div class="form-group"><label>Benefit</label><input type="text" id="customBenefit" placeholder="فائدہ یا فضیلت"></div>
+        <div class="form-group"><label>Default Target</label><input type="number" id="customTarget" value="33"></div>
+        <button type="button" class="btn-primary" id="saveBtnText" onclick="saveDhikr()">Save Dhikr</button>
+    </div>
+
+    <!-- Custom Dialog Popup -->
+    <div id="customModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3 id="modalTitle">Modal Title</h3>
+            <div id="modalBody"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-sub" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn-primary" style="margin:0; width:auto; padding:8px 16px;" id="modalConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-credit">
+        Developed by <span>Burhan Ahmad Mughal</span>
+    </div>
+</div>
+
+<script>
+const uiTranslations = {
+    en: { title: "📿 Tasbeeh Pro", search: "🔍 Search Dhikr...", target: "Target", reset: "Reset", edit: "Edit Zikr", save: "Save Dhikr", totalLbl: "Total Lifetime Count", transLbl: "Translation: ", benefitLbl: "Benefit: " },
+    ur: { title: "📿 تسبیح پرو", search: "🔍 ذکر تلاش کریں...", target: "ہدف", reset: "ری سیٹ", edit: "ترمیم کریں", save: "محفوظ کریں", totalLbl: "کل تسبیحات (Lifetime Count)", transLbl: "ترجمہ: ", benefitLbl: "فائدہ: " },
+    ar: { title: "📿 التسبيح الذكي", search: "🔍 بحث عن الذكر...", target: "الهدف", reset: "إعادة ضبط", edit: "تعديل", save: "حفظ", totalLbl: "المجموع الكلي", transLbl: "الترجمة: ", benefitLbl: "الفائدة: " },
+    tr: { title: "📿 Zikirmatik Pro", search: "🔍 Zikir Ara...", target: "Hedef", reset: "Sıfırla", edit: "Düzenle", save: "Kaydet", totalLbl: "Toplam Zikir", transLbl: "Anlamı: ", benefitLbl: "Fazileti: " }
+};
+
+let currentLang = 'en', soundEnabled = true, fontSize = 20;
+
+// Full translations added for Ayat al-Kursi
+const defaultDhikrs = [
+    { 
+        id: 1, 
+        title: { en: "Ayat al-Kursi", ur: "آیۃ الکرسی", ar: "آية الكرسي", tr: "Ayet'el Kürsi" }, 
+        arabic: "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ", 
+        trans: { 
+            en: "Allah! There is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth. Who is it that can intercede with Him except by His permission? He knows what is [presently] before them and what will be after them, and they encompass not a thing of His knowledge except for what He wills. His Kursi extends over the heavens and the earth, and their preservation tires Him not. And He is the Most High, the Most Great.", 
+            ur: "اللہ! اس کے سوا کوئی معبود نہیں، وہ ہمیشہ زندہ رہنے والا اور سب کو سنبھالنے والا ہے۔ اسے نہ اونگھ آتی ہے نہ نیند، اسی کا ہے جو کچھ آسمانوں اور زمین میں ہے۔ کون ہے جو اس کی اجازت کے بغیر اس کے حضور سفارش کر سکے؟ جو کچھ ان کے سامنے ہے اور جو ان کے پیچھے ہے وہ سب جانتا ہے اور وہ اس کے علم میں سے کسی چیز کا احاطہ نہیں کر سکتے مگر جتنا وہ چاہے۔ اس کی کرسی آسمانوں اور زمین کو گھیرے ہوئے ہے اور ان کی حفاظت اس پر گراں نہیں گزرتی، اور وہی بلند اور عظمت والا ہے۔", 
+            ar: "الله لا إله إلا هو الحي القيوم لا تأخذه سنة ولا نوم له ما في السماوات وما في الأرض من ذا الذي يشفع عنده إلا بإذنه يعلم ما بين أيديهم وما خلفهم ولا يحيطون بشيء من علمه إلا بما شاء وسع كرسيه السماوات والأرض ولا يئوده حفظهما وهو العلي العظيم.", 
+            tr: "Allah, O'ndan başka ilah yoktur. O diridir, kayyumdur. Kendisini ne bir uyuklama tutar ne de uyku. Göklerde ve yerde ne varsa hepsi O'nundur. O'nun izni olmadan katında kim şefaat edebilir? Onların önlerindekini ve arkalarındakini bilir. O'nun dilediğinden başka ilmu-i ilahisinden hiçbir şeyi kavrayamazlar. O'nun kürsüsü gökleri و yeri kuşatmıştır." 
+        }, 
+        benefit: { 
+            en: "Protection from all evil and Satan throughout the night.", 
+            ur: "شیاطین، آفتوں اور تمام شرور سے مکمل اور مضبوط ترین حفاظت۔", 
+            ar: "الحماية الحصينة من كل شر والشيطان.", 
+            tr: "Her türlü kötülükten ve şeytandan koruma." 
+        }, 
+        target: 1 
+    },
+    { id: 2, title: { en: "Surah Al-Ikhlas", ur: "سورۃ الاخلاص", ar: "سورة الإخلاص", tr: "İhlas Suresi" }, arabic: "قُلْ هُوَ اللَّهُ أَحَدٌ ﴿١﴾ اللَّهُ الصَّمَدُ ﴿٢﴾ لَمْ يَلِدْ وَلَمْ يُولَدْ ﴿٣﴾ وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ ﴿٤﴾", trans: { en: "Say, 'He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, Nor is there to Him any equivalent.'", ur: "کہہ دیجیے، وہ اللہ ایک ہے، اللہ بے نیاز ہے۔ نہ اس کی کوئی اولاد ہے اور نہ وہ کسی کی اولاد ہے، اور کوئی اس کا ہمسر نہیں ہے۔", ar: "قل هو الله أحد، الله الصمد، لم يلد ولم يولد، ولم يكن له كفوا أحد.", tr: "De ki: O Allah tektir. Allah sameddir. O doğurmamış ve doğmamıştır. Hiçbir şey O'na denk değildir." }, benefit: { en: "Reward equal to 1/3 of the Holy Quran.", ur: "ایک بار پڑھنے پر ایک تہائی قرآن مجید کی تلاوت کا ثواب۔", ar: "تعدل ثلث القرآن الكريم.", tr: "Kur'an'ın üçte birine denk ثواب." }, target: 3 },
+    { id: 3, title: { en: "SubhanAllah", ur: "سبحان اللہ", ar: "سبحان الله", tr: "Sübhanallah" }, arabic: "سُبْحَانَ اللَّهِ", trans: { en: "Glory be to Allah.", ur: "اللہ ہر عیب اور نقص سے پاک ہے۔", ar: "تنزيه الله عن كل نقص.", tr: "Allah her türlü noksandan münezzehtir." }, benefit: { en: "A palm tree is planted in Paradise for you.", ur: "جنت میں پڑھنے والے کے لیے ایک خوبصورت درخت لگایا جاتا ہے۔", ar: "غرس نخلة في الجنة.", tr: "Cennette bir ağaç dikilir." }, target: 33 },
+    { id: 4, title: { en: "Alhamdulillah", ur: "الحمد للہ", ar: "الحمد لله", tr: "Elhamdülillah" }, arabic: "الْحَمْدُ لِلَّهِ", trans: { en: "All praise and thanks be to Allah.", ur: "تمام تعریفیں اور شکر صرف اللہ تعالٰی کے لیے ہے۔", ar: "الثناء والحمد لله وحده.", tr: "Övgü ve teşekkür yalnızca Allah'a mahsustur." }, benefit: { en: "Fills the scale of good deeds on Judgment Day.", ur: "قیامت کے دن نیکیوں کے ترازو کو بھر دیتا ہے۔", ar: "تملأ ميزان الحسنات.", tr: "Mizanı sevapla doldurur." }, target: 33 },
+    { id: 5, title: { en: "Allahu Akbar", ur: "اللہ اکبر", ar: "الله أكبر", tr: "Allahü Ekber" }, arabic: "اللَّهُ أَكْبَرُ", trans: { en: "Allah is the Greatest.", ur: "اللہ ہر چیز سے بڑا اور عظمت والا ہے۔", ar: "الله أعظم وأكبر من كل شيء.", tr: "Allah en büyüktür." }, benefit: { en: "Grants high spiritual status & peace of heart.", ur: "بلند روحانی درجات اور دل کا سکون و اطمینان۔", ar: "رفعة الدرجات وطمأنينة القلب.", tr: "Yüksek dereceler ve gönül huzuru sağlar." }, target: 34 }
+];
+
+let allDhikrs = [], activeDhikrId = null, editingId = null;
+let counts = {}, customDhikrsList = [], customTargets = {}, lifetimeTotalCount = 0;
+
+const memoryStore = {};
+function safeGet(key) {
+    try {
+        const val = localStorage.getItem(key);
+        return val ? JSON.parse(val) : (memoryStore[key] ? JSON.parse(memoryStore[key]) : null);
+    } catch(e) {
+        return memoryStore[key] ? JSON.parse(memoryStore[key]) : null;
+    }
+}
+
+function safeSet(key, val) {
+    try {
+        localStorage.setItem(key, JSON.stringify(val));
+    } catch(e) {}
+    memoryStore[key] = JSON.stringify(val);
+}
+
+function init() {
+    try {
+        counts = safeGet('my_counts') || {};
+        customDhikrsList = safeGet('custom_dhikrs_user') || [];
+        customTargets = safeGet('custom_targets') || {};
+        const savedTotal = safeGet('lifetime_total_count');
+        lifetimeTotalCount = savedTotal ? parseInt(savedTotal) : 0;
+
+        allDhikrs = [...defaultDhikrs, ...customDhikrsList];
+        renderList(allDhikrs);
+        updateTotalCountDisplay();
+    } catch(e) {
+        renderList(defaultDhikrs);
+    }
+}
+
+function renderList(list) {
+    const container = document.getElementById('dhikrListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    list.forEach(item => {
+        const titleText = typeof item.title === 'object' ? (item.title[currentLang] || item.title['en']) : item.title;
+        const currentTarget = customTargets[item.id] || item.target;
+        const div = document.createElement('div');
+        div.className = 'dhikr-item';
+        div.onclick = () => openDhikrDetail(item.id);
+        div.innerHTML = `<div class="info"><h3>${titleText}</h3><p>${uiTranslations[currentLang].target}: ${currentTarget}</p></div><div class="badge">${counts[item.id] || 0}</div>`;
+        container.appendChild(div);
+    });
+}
+
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+function extractText(obj) {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    if (typeof obj === 'object') {
+        return obj[currentLang] || obj['en'] || obj['ur'] || Object.values(obj)[0] || '';
+    }
+    return '';
+}
+
+function openDhikrDetail(id) {
+    activeDhikrId = id;
+    const dhikr = allDhikrs.find(d => d.id === id);
+    if(!dhikr) return;
+    
+    const transText = extractText(dhikr.trans);
+    const benefitText = extractText(dhikr.benefit);
+
+    document.getElementById('detailArabic').innerText = dhikr.arabic || '';
+    document.getElementById('detailTrans').innerText = transText ? uiTranslations[currentLang].transLbl + transText : '';
+    document.getElementById('detailBenefit').innerText = benefitText ? uiTranslations[currentLang].benefitLbl + benefitText : '';
+    
+    const editBtn = document.getElementById('editBtnText');
+    if (dhikr.isUserCreated) {
+        editBtn.style.display = 'block';
+    } else {
+        editBtn.style.display = 'none';
+    }
+
+    updateCounterDisplay();
+    showScreen('detail-screen');
+}
+
+function setQuickTarget(val) {
+    if (!activeDhikrId) return;
+    customTargets[activeDhikrId] = val;
+    safeSet('custom_targets', customTargets);
+    updateCounterDisplay();
+    renderList(allDhikrs);
+}
+
+function showModal(title, bodyHtml, onConfirm) {
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    confirmBtn.onclick = () => {
+        onConfirm();
+        closeModal();
+    };
+    document.getElementById('customModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('customModal').style.display = 'none';
+}
+
+function promptCustomTarget() {
+    if (!activeDhikrId) return;
+    showModal("Set Custom Target", `<input type="number" id="customTargetInput" placeholder="Enter target count" value="100">`, () => {
+        const val = parseInt(document.getElementById('customTargetInput').value);
+        if (val && val > 0) {
+            setQuickTarget(val);
+        }
+    });
+}
+
+function handleTap() {
+    if (!activeDhikrId) return;
+    
+    const dhikr = allDhikrs.find(d => d.id === activeDhikrId);
+    const target = customTargets[activeDhikrId] || (dhikr ? dhikr.target : 33);
+    
+    let current = (counts[activeDhikrId] || 0) + 1;
+    lifetimeTotalCount += 1;
+    
+    if (current >= target) {
+        counts[activeDhikrId] = 0;
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    } else {
+        counts[activeDhikrId] = current;
+        if (navigator.vibrate) navigator.vibrate(30);
+    }
+    
+    safeSet('my_counts', counts);
+    safeSet('lifetime_total_count', lifetimeTotalCount);
+    
+    if (soundEnabled) playClickSound();
+    
+    updateCounterDisplay();
+    updateTotalCountDisplay();
+    renderList(allDhikrs);
+}
+
+function updateCounterDisplay() {
+    const current = counts[activeDhikrId] || 0;
+    const dhikr = allDhikrs.find(d => d.id === activeDhikrId);
+    const target = customTargets[activeDhikrId] || (dhikr ? dhikr.target : 33);
+    
+    document.getElementById('countDisplay').innerText = current;
+    document.getElementById('targetDisplay').innerText = `${uiTranslations[currentLang].target}: ${target}`;
+
+    document.querySelectorAll('.chip').forEach(c => {
+        if (parseInt(c.innerText) === target) c.classList.add('active');
+        else c.classList.remove('active');
+    });
+
+    const circle = document.getElementById('progressCircle');
+    if(circle && circle.r) {
+        const radius = circle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - Math.min(current / target, 1) * circumference;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = offset;
+    }
+}
+
+function updateTotalCountDisplay() {
+    document.getElementById('totalCountDisplay').innerText = lifetimeTotalCount;
+}
+
+function resetCurrentCount() {
+    if (!activeDhikrId) return;
+    counts[activeDhikrId] = 0;
+    safeSet('my_counts', counts);
+    updateCounterDisplay();
+    renderList(allDhikrs);
+}
+
+function resetLifetimeCount() {
+    const msg = currentLang === 'ur' 
+        ? "کیا آپ واقعی اپنا لائف ٹائم کاؤنٹ (0) کرنا چاہتے ہیں؟"
+        : "Are you sure you want to reset total lifetime count to 0?";
+        
+    showModal("Reset Confirmation", `<p style="font-size:13px; color:var(--text-secondary); margin-bottom:15px;">${msg}</p>`, () => {
+        lifetimeTotalCount = 0;
+        safeSet('lifetime_total_count', 0);
+        updateTotalCountDisplay();
+    });
+}
+
+function openAddDhikrForm() {
+    editingId = null;
+    document.getElementById('formHeading').innerText = "Add New Dhikr";
+    document.getElementById('customTitle').value = '';
+    document.getElementById('customArabic').value = '';
+    document.getElementById('customTrans').value = '';
+    document.getElementById('customBenefit').value = '';
+    document.getElementById('customTarget').value = '33';
+    showScreen('add-screen');
+}
+
+function editCurrentDhikr() {
+    const dhikr = allDhikrs.find(d => d.id === activeDhikrId);
+    if(!dhikr || !dhikr.isUserCreated) return;
+    editingId = dhikr.id;
+    document.getElementById('formHeading').innerText = "Edit Dhikr";
+    document.getElementById('customTitle').value = extractText(dhikr.title);
+    document.getElementById('customArabic').value = dhikr.arabic || '';
+    document.getElementById('customTrans').value = extractText(dhikr.trans);
+    document.getElementById('customBenefit').value = extractText(dhikr.benefit);
+    document.getElementById('customTarget').value = customTargets[editingId] || dhikr.target || 33;
+    showScreen('add-screen');
+}
+
+function saveDhikr() {
+    const title = document.getElementById('customTitle').value.trim();
+    if (!title) return alert('Title is required');
+    
+    const targetVal = parseInt(document.getElementById('customTarget').value) || 33;
+    const arabicVal = document.getElementById('customArabic').value;
+    const transVal = document.getElementById('customTrans').value;
+    const benefitVal = document.getElementById('customBenefit').value;
+
+    if (editingId) {
+        const idx = customDhikrsList.findIndex(d => d.id === editingId);
+        if (idx !== -1) {
+            customDhikrsList[idx] = { ...customDhikrsList[idx], title, arabic: arabicVal, trans: transVal, benefit: benefitVal, target: targetVal };
+        }
+    } else {
+        const newDhikr = {
+            id: Date.now(),
+            isUserCreated: true,
+            title: title,
+            arabic: arabicVal,
+            trans: transVal,
+            benefit: benefitVal,
+            target: targetVal
+        };
+        customDhikrsList.push(newDhikr);
+    }
+
+    safeSet('custom_dhikrs_user', customDhikrsList);
+    init();
+    showScreen('list-screen');
+}
+
+function changeLanguage(langKey) {
+    currentLang = langKey;
+    const t = uiTranslations[langKey];
+    document.getElementById('appTitle').innerText = t.title;
+    document.getElementById('searchInput').placeholder = t.search;
+    document.getElementById('resetBtnText').innerText = t.reset;
+    document.getElementById('editBtnText').innerText = t.edit;
+    document.getElementById('saveBtnText').innerText = t.save;
+    document.getElementById('labelTotal').innerText = t.totalLbl;
+    
+    renderList(allDhikrs);
+    if (activeDhikrId) openDhikrDetail(activeDhikrId);
+}
+
+function toggleTheme() {
+    const body = document.documentElement;
+    const currentTheme = body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    body.setAttribute('data-theme', newTheme);
+    document.getElementById('themeToggle').innerText = newTheme === 'light' ? '☀️' : '🌙';
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('soundToggle').innerText = soundEnabled ? '🔊' : '🔇';
+}
+
+function changeFontSize(delta) {
+    fontSize = Math.max(14, Math.min(28, fontSize + delta));
+    document.getElementById('detailArabic').style.fontSize = fontSize + 'px';
+}
+
+let globalAudioCtx = null;
+function playClickSound() {
+    try {
+        if (!globalAudioCtx) globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+        const osc = globalAudioCtx.createOscillator();
+        const gain = globalAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, globalAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, globalAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, globalAudioCtx.currentTime + 0.05);
+        osc.connect(gain);
+        osc.connect(globalAudioCtx.destination);
+        osc.start();
+        osc.stop(globalAudioCtx.currentTime + 0.05);
+    } catch(e) {}
+}
+
+function filterList() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    renderList(allDhikrs.filter(d => {
+        const titleText = extractText(d.title);
+        return titleText.toLowerCase().includes(q);
+    }));
+}
+
+function exportData() {
+    const data = { counts, customDhikrsList, customTargets, lifetimeTotalCount };
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tasbeeh_backup.json';
+    a.click();
+}
+
+function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                if (parsed.counts) safeSet('my_counts', parsed.counts);
+                if (parsed.customDhikrsList) safeSet('custom_dhikrs_user', parsed.customDhikrsList);
+                if (parsed.customTargets) safeSet('custom_targets', parsed.customTargets);
+                if (parsed.lifetimeTotalCount !== undefined) safeSet('lifetime_total_count', parsed.lifetimeTotalCount);
+                init();
+                alert('Data restored successfully!');
+            } catch(err) { alert('Invalid Backup File'); }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+window.onload = init;
+</script>
+</body>
+</html>
