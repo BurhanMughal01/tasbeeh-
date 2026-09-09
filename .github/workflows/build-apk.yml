@@ -5,24 +5,23 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    build:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+        - name: Set up JDK 17
+          uses: actions/setup-java@v4
+          with:
+            distribution: 'temurin'
+            java-version: '17'
 
-      - name: Build Android Package via PWABuilder CLI
-        run: |
-          npm install -g @pwabuilder/pwabuilder-cli
-          pwabuilder package --url https://github.com/${{ github.repository }} --platforms android
+        - name: Build WebAPK via PWABuilder Action
+          uses: PWABuilder/pwabuilder-android-action@main
+          with:
+            manifest-url: 'https://raw.githubusercontent.com/${{ github.repository }}/main/manifest.json'
+            name: 'Tasbeeh Pro'
+            icon-url: 'https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/icon.png'
+            package-id: 'com.tasbeeh.pro'
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-signed.apk
-          path: android/app/build/outputs/apk/release/
