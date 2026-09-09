@@ -1,21 +1,17 @@
 {
-  "name": "Tasbeeh Counter",
-  "short_name": "Tasbeeh",
-  "start_url": "./",
+  "name": "Tasbeeh Pro - Islamic Counter",
+  "short_name": "Tasbeeh Pro",
+  "start_url": "/tasbeeh-/",
   "display": "standalone",
-  "background_color": "#071b14",
-  "theme_color": "#0b5d3b",
-  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#10b981",
+  "description": "A simple, elegant, and ad-free digital Tasbeeh counter app.",
   "icons": [
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
+      "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
